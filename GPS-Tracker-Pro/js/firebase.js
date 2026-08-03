@@ -75,10 +75,13 @@ function redirectIfAuthed() {
 function renderUserChip(user) {
   const nameEl = document.getElementById("userChipName");
   const avatarEl = document.getElementById("userChipAvatar");
-  if (!nameEl) return;
+  const menuNameEl = document.getElementById("menuUserName");
+  const menuAvatarEl = document.getElementById("menuUserAvatar");
   const label = user.displayName || user.email || "Operator";
-  nameEl.textContent = label;
+  if (nameEl) nameEl.textContent = label;
   if (avatarEl) avatarEl.textContent = label.charAt(0).toUpperCase();
+  if (menuNameEl) menuNameEl.textContent = label;
+  if (menuAvatarEl) menuAvatarEl.textContent = label.charAt(0).toUpperCase();
 }
 
 function signOutUser() {
@@ -144,4 +147,27 @@ Object.assign(window.GPSApp, {
   auth, db, refs,
   requireAuth, redirectIfAuthed, signOutUser, renderUserChip,
   haversineKm, timeAgo, formatDateTime, isDeviceStale, OFFLINE_THRESHOLD_MS
+});
+
+/* -----------------------------------------------------------------------
+   6. MOBILE UI WIRING (shared across all pages)
+   The hamburger (#menuBtn) opens the account menu (#mobileMenu), and both
+   the desktop (#logoutBtn) and mobile (#menuLogoutBtn) sign-out buttons
+   are bound here so each page stays consistent on small screens.
+   ----------------------------------------------------------------------- */
+document.addEventListener("DOMContentLoaded", () => {
+  const menuBtn = document.getElementById("menuBtn");
+  const mobileMenu = document.getElementById("mobileMenu");
+
+  menuBtn?.addEventListener("click", () => mobileMenu?.classList.toggle("open"));
+  document.getElementById("logoutBtn")?.addEventListener("click", signOutUser);
+  document.getElementById("menuLogoutBtn")?.addEventListener("click", signOutUser);
+
+  // Close the menu when tapping anywhere outside it.
+  document.addEventListener("click", (e) => {
+    if (!mobileMenu?.classList.contains("open")) return;
+    if (mobileMenu.contains(e.target)) return;
+    if (menuBtn?.contains(e.target)) return;
+    mobileMenu.classList.remove("open");
+  });
 });

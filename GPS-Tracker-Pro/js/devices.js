@@ -43,8 +43,6 @@ function bindUI() {
   els.cancelGeofenceBtn?.addEventListener("click", closeGeofenceModal);
   els.geofenceModalBackdrop?.addEventListener("click", (e) => { if (e.target === els.geofenceModalBackdrop) closeGeofenceModal(); });
   els.geofenceForm?.addEventListener("submit", saveGeofence);
-
-  document.getElementById("logoutBtn")?.addEventListener("click", GPSApp.signOutUser);
 }
 
 /* -----------------------------------------------------------------------

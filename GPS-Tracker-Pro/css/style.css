@@ -36,6 +36,7 @@
   /* -- Layout ------------------------------------------------------------ */
   --sidebar-w: 340px;
   --topbar-h: 64px;
+  --bottom-nav-h: 60px;
   --radius-sm: 8px;
   --radius-md: 14px;
   --radius-lg: 20px;
@@ -88,6 +89,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
    ========================================================================== */
 .app-shell {
   height: 100vh;
+  height: 100dvh; /* dynamic viewport height — avoids bottom clipping on mobile browsers */
   display: grid;
   grid-template-rows: var(--topbar-h) 1fr;
   grid-template-columns: var(--sidebar-w) 1fr;
@@ -95,6 +97,9 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
     "topbar topbar"
     "sidebar main";
 }
+
+* { -webkit-tap-highlight-color: transparent; }
+button { touch-action: manipulation; }
 
 /* -- Top navigation bar --------------------------------------------------- */
 .topbar {
@@ -108,6 +113,13 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
   -webkit-backdrop-filter: blur(18px);
   border-bottom: 1px solid var(--panel-border);
   z-index: 40;
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  min-width: 0;
 }
 
 .brand {
@@ -483,6 +495,20 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
   100% { transform: scale(2.4); opacity: 0; }
 }
 
+/* Leaflet popup used for history point alerts (dark theme) */
+.leaflet-popup-content-wrapper {
+  background: var(--panel-solid);
+  color: var(--text-primary);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-panel);
+}
+.leaflet-popup-content { margin: 12px 14px; }
+.leaflet-popup-tip { background: var(--panel-solid); }
+.leaflet-popup-close-button { color: var(--text-muted); }
+.history-point-popup .hpp-time { font-family: var(--font-mono); font-size: 13px; font-weight: 700; }
+.history-point-popup .hpp-meta { font-size: 11.5px; color: var(--text-secondary); margin-top: 3px; }
+
 /* ==========================================================================
    Panels page (devices.html / history.html shared content area)
    ========================================================================== */
@@ -515,6 +541,22 @@ th { text-align: left; font-size: 10.5px; text-transform: uppercase; letter-spac
 td { padding: 12px; font-size: 13px; border-bottom: 1px solid var(--panel-border); }
 tr:last-child td { border-bottom: none; }
 tr:hover td { background: rgba(255,255,255,0.02); }
+tr.selected-point td { background: rgba(255,59,59,0.12) !important; }
+
+/* History page: route map + points table side by side */
+.history-split {
+  display: flex;
+  gap: 20px;
+  align-items: stretch;
+}
+.history-map-panel { flex: 1.2; min-width: 0; padding: 0; overflow: hidden; }
+.history-table-panel {
+  flex: 1; min-width: 0;
+  max-height: 420px;
+  overflow-y: auto;
+  padding: 0;
+}
+.history-table-panel thead th { position: sticky; top: 0; background: var(--panel-solid); z-index: 1; }
 
 .status-pill {
   display: inline-flex; align-items: center; gap: 5px;
@@ -551,7 +593,9 @@ tr:hover td { background: rgba(255,255,255,0.02); }
    Login page
    ========================================================================== */
 .auth-wrap {
-  height: 100vh; display: flex; align-items: center; justify-content: center;
+  height: 100vh;
+  height: 100dvh;
+  display: flex; align-items: center; justify-content: center;
   background: var(--bg-base);
   background-image: radial-gradient(circle at 50% 0%, rgba(255,59,59,0.08), transparent 55%);
 }
@@ -568,6 +612,107 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 .auth-error { font-size: 12px; color: var(--red); margin-top: 4px; min-height: 16px; }
 
 /* ==========================================================================
+   Mobile-only components (bottom nav, account menu, device alerts)
+   Hidden on desktop; revealed in the <= 860px media query.
+   ========================================================================== */
+.menu-btn { display: none; }
+
+.mobile-menu {
+  display: none;
+  position: fixed;
+  top: var(--topbar-h);
+  right: 12px;
+  width: 250px;
+  background: var(--panel-solid);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-panel);
+  z-index: 60;
+  overflow: hidden;
+}
+.mobile-menu.open { display: block; animation: menuDrop 180ms ease; }
+@keyframes menuDrop { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+
+.mobile-menu-head {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px;
+  border-bottom: 1px solid var(--panel-border);
+  background-image: radial-gradient(circle at 100% 0%, rgba(255,59,59,0.1), transparent 60%);
+}
+.mobile-menu-name { font-size: 13.5px; font-weight: 600; }
+.mobile-menu-sub { font-size: 11px; color: var(--text-muted); }
+
+.mobile-menu-items { padding: 6px; }
+.mobile-menu-item {
+  display: flex; align-items: center; gap: 10px;
+  width: 100%; padding: 11px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 13px; font-weight: 500;
+  color: var(--text-secondary);
+  transition: var(--transition);
+}
+.mobile-menu-item:hover { background: rgba(255,255,255,0.05); color: var(--text-primary); }
+.mobile-menu-item.danger { color: var(--red); }
+.mobile-menu-item.danger:hover { background: rgba(255,77,94,0.12); }
+.mobile-menu-item svg { width: 16px; height: 16px; }
+
+.bottom-nav {
+  display: none;
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  height: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom));
+  padding-bottom: env(safe-area-inset-bottom);
+  background: var(--panel-solid);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-top: 1px solid var(--panel-border);
+  z-index: 45;
+}
+.bottom-nav-item {
+  flex: 1;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 3px;
+  font-size: 10.5px;
+  color: var(--text-muted);
+  transition: var(--transition);
+}
+.bottom-nav-item svg { width: 20px; height: 20px; }
+.bottom-nav-item:hover { color: var(--text-primary); }
+.bottom-nav-item.active { color: var(--accent); }
+
+.mobile-alerts { display: none; }
+.mobile-alert-card {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px;
+  background: var(--panel);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-panel);
+  cursor: pointer;
+  transition: var(--transition);
+}
+.mobile-alert-card:active { transform: scale(0.99); }
+.mobile-alert-card .status-ring { position: static; flex-shrink: 0; }
+.mobile-alert-info { flex: 1; min-width: 0; }
+.mobile-alert-name {
+  font-size: 13px; font-weight: 600;
+  display: flex; align-items: center; justify-content: space-between; gap: 6px;
+}
+.mobile-alert-time { font-size: 10px; color: var(--text-muted); font-family: var(--font-mono); flex-shrink: 0; }
+.mobile-alert-meta {
+  display: flex; align-items: center; gap: 8px; margin-top: 3px;
+  font-size: 11px; color: var(--text-secondary);
+}
+.mobile-alert-meta .battery-bar { width: 30px; height: 4px; }
+.mobile-alert-coords {
+  font-size: 10.5px; color: var(--text-muted); margin-top: 3px;
+  font-family: var(--font-mono);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* ==========================================================================
    Responsive
    ========================================================================== */
 @media (max-width: 1024px) {
@@ -577,25 +722,102 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 
 @media (max-width: 860px) {
   .app-shell { grid-template-columns: 1fr; grid-template-areas: "topbar" "main"; }
-  .sidebar {
-    position: fixed; top: var(--topbar-h); bottom: 0; left: 0;
-    width: 86vw; max-width: 340px;
-    transform: translateX(-100%);
-    transition: transform 220ms ease;
-    z-index: 45;
-  }
-  .sidebar.open { transform: translateX(0); }
+  /* Mobile: no sidebar — device data is shown as alert cards over the map */
+  .sidebar { display: none; }
+  .stats-strip { top: 12px; left: 12px; right: 12px; }
   .topnav-links { display: none; }
-  .device-detail-card { width: calc(100vw - 36px); }
+  .topbar-right { display: none; }
+  .brand small { display: none; }
+  .menu-btn { display: flex; }
+  .bottom-nav { display: flex; }
   .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
-  .content-scroll { padding: 20px; }
-  .sidebar-toggle-btn { display: flex !important; }
+  .content-scroll { padding: 20px 20px calc(var(--bottom-nav-h) + env(safe-area-inset-bottom) + 24px); }
+
+  /* History split stacks vertically on phones */
+  .history-split { flex-direction: column; }
+  .history-table-panel { max-height: 320px; }
+
+  /* Device data alerts on the map (below the stats strip) */
+  .mobile-alerts {
+    display: flex;
+    position: absolute;
+    top: calc(var(--topbar-h) + 80px);
+    left: 12px; right: 12px;
+    flex-direction: column;
+    gap: 8px;
+    max-height: calc(100vh - var(--topbar-h) - var(--bottom-nav-h) - 170px);
+    overflow-y: auto;
+    z-index: 15;
+    pointer-events: none;
+    -webkit-mask-image: linear-gradient(to bottom, #000 88%, transparent);
+    mask-image: linear-gradient(to bottom, #000 88%, transparent);
+  }
+  .mobile-alert-card { pointer-events: auto; }
+
+  /* Floating map panels sit above the bottom nav */
+  .device-detail-card {
+    left: 12px;
+    width: calc(100vw - 24px);
+    bottom: calc(var(--bottom-nav-h) + 12px + env(safe-area-inset-bottom));
+  }
+  .map-controls {
+    right: 12px;
+    bottom: calc(var(--bottom-nav-h) + 12px + env(safe-area-inset-bottom));
+  }
+  .toast-stack {
+    top: calc(var(--topbar-h) + 8px);
+    right: 12px;
+    width: calc(100vw - 24px);
+  }
+
+  /* History trip-stats cards: 2 rows of 2 on phones */
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
-.sidebar-toggle-btn { display: none; }
-
 @media (max-width: 520px) {
-  .stat-label { display: none; }
   .stats-strip { padding: 10px 12px; }
   .stat-block { padding-right: 10px; gap: 6px; }
+  .stat-label { font-size: 9px; letter-spacing: 0.2px; }
+  .stat-value { font-size: 16px; }
+}
+
+/* ==========================================================================
+   Small phones (< 720px)
+   ========================================================================== */
+@media (max-width: 720px) {
+  /* Keep full-height tables scrollable instead of squashing them */
+  .panel-card { overflow-x: auto; }
+  table { min-width: 540px; }
+
+  /* Prevent iOS Safari auto-zoom when focusing inputs */
+  input, select, textarea { font-size: 16px; }
+}
+
+@media (max-width: 480px) {
+  /* -- Topbar compacting ------------------------------------------------ */
+  .topbar { padding: 0 12px; }
+  .topbar-left { gap: 10px; }
+  .brand { font-size: 15px; gap: 8px; }
+  .brand-mark { width: 24px; height: 24px; }
+
+  /* -- Content pages ---------------------------------------------------- */
+  .content-scroll { padding: 14px; }
+  .page-head h1 { font-size: 20px; }
+  .page-head { margin-bottom: 16px; }
+
+  /* -- Map overlays ----------------------------------------------------- */
+  .stats-strip { top: 12px; left: 12px; right: 12px; }
+  .device-detail-card { padding: 14px; }
+
+  /* -- Modals / forms ---------------------------------------------------- */
+  .auth-card { padding: 26px 20px; }
+  .modal { padding: 18px; }
+  .modal-actions { flex-direction: column-reverse; }
+  .modal-actions .btn { width: 100%; }
+}
+
+@media (max-width: 360px) {
+  .brand { font-size: 14px; }
+  .stat-value { font-size: 15px; }
+  .topbar-left { gap: 8px; }
 }

@@ -6,7 +6,7 @@
    whenever a device crosses a threshold (battery, offline, speed).
    ========================================================================== */
 
-const TRAIL_LENGTH = 30; // last N points drawn per device (within 20-50 range)
+const TRAIL_LENGTH = 5; // last N points drawn per device
 
 const state = {
   devices: {},          // deviceId -> device object
@@ -34,7 +34,7 @@ function cacheEls() {
   els.statAlerts = document.getElementById("statAlerts");
   els.detailCard = document.getElementById("deviceDetailCard");
   els.loadingOverlay = document.getElementById("loadingOverlay");
-  els.sidebarToggle = document.getElementById("sidebarToggle");
+  els.mobileAlerts = document.getElementById("mobileAlerts");
   els.sidebar = document.querySelector(".sidebar");
 }
 
@@ -63,8 +63,6 @@ function bindUI() {
   document.getElementById("zoomOutBtn")?.addEventListener("click", () => GPSApp.zoomOut());
 
   document.getElementById("fitAllBtn")?.addEventListener("click", () => GPSApp.fitToAllMarkers());
-  els.sidebarToggle?.addEventListener("click", () => els.sidebar.classList.toggle("open"));
-  document.getElementById("logoutBtn")?.addEventListener("click", GPSApp.signOutUser);
 }
 
 /* -----------------------------------------------------------------------
@@ -122,6 +120,7 @@ function handleDevicesUpdate(data) {
   });
 
   renderDeviceList();
+  renderMobileAlerts();
   renderStats();
   if (state.selectedDeviceId && data[state.selectedDeviceId]) {
     renderDetailCard(data[state.selectedDeviceId]);
@@ -151,6 +150,7 @@ function fetchTrailFor(deviceId, type) {
 function startOfflineWatchdog() {
   setInterval(() => {
     renderDeviceList();
+    renderMobileAlerts();
     renderStats();
     if (state.selectedDeviceId && state.devices[state.selectedDeviceId]) {
       renderDetailCard(state.devices[state.selectedDeviceId]);
@@ -221,6 +221,48 @@ function deviceCardHTML(d) {
           <span class="meta-item">${battery}%</span>
         </div>
         <div class="device-address">${(d.latitude ?? 0).toFixed(4)}, ${(d.longitude ?? 0).toFixed(4)}</div>
+      </div>
+    </div>`;
+}
+
+/* Mobile: device data shown as alert cards over the map (sidebar is hidden
+   on phones). Tapping a card selects that device on the map. */
+function renderMobileAlerts() {
+  if (!els.mobileAlerts) return;
+  const list = Object.values(state.devices);
+  if (!list.length) {
+    els.mobileAlerts.innerHTML = "";
+    return;
+  }
+
+  els.mobileAlerts.innerHTML = list
+    .sort((a, b) => (a.name || "").localeCompare(b.name || ""))
+    .map((d) => mobileAlertHTML(d))
+    .join("");
+
+  els.mobileAlerts.querySelectorAll(".mobile-alert-card").forEach((card) => {
+    card.addEventListener("click", () => selectDevice(card.dataset.id));
+  });
+}
+
+function mobileAlertHTML(d) {
+  const offline = GPSApp.isDeviceStale(d);
+  const battery = d.battery ?? 0;
+  const batteryClass = battery <= 15 ? "critical" : battery <= 35 ? "low" : "";
+  return `
+    <div class="mobile-alert-card" data-id="${d.deviceId}">
+      <div class="status-ring ${offline ? "offline" : "online"}"></div>
+      <div class="mobile-alert-info">
+        <div class="mobile-alert-name">
+          <span>${escapeHTML(d.name)}</span>
+          <span class="mobile-alert-time">${GPSApp.timeAgo(d.timestamp)}</span>
+        </div>
+        <div class="mobile-alert-meta">
+          <span>⚡ ${d.speed ?? 0} km/h</span>
+          <span class="battery-bar"><span class="battery-fill ${batteryClass}" style="width:${battery}%"></span></span>
+          <span>${battery}%</span>
+        </div>
+        <div class="mobile-alert-coords">${(d.latitude ?? 0).toFixed(4)}, ${(d.longitude ?? 0).toFixed(4)}</div>
       </div>
     </div>`;
 }

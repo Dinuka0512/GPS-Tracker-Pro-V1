@@ -40,6 +40,14 @@ function cacheEls() {
 
 function bindUI() {
   els.loadBtn?.addEventListener("click", loadHistory);
+
+  // When a route line is clicked on the map, highlight its table row.
+  document.addEventListener("gps:history-point-selected", (e) => {
+    const t = e.detail.t;
+    els.pointsTableBody?.querySelectorAll("tr[data-time]").forEach((tr) => {
+      tr.classList.toggle("selected-point", tr.dataset.time === t);
+    });
+  });
 }
 
 function populateDeviceSelect() {
@@ -133,19 +141,30 @@ function renderStats() {
 function renderTable() {
   if (!els.pointsTableBody) return;
   if (!currentPoints.length) {
-    els.pointsTableBody.innerHTML = `<tr><td colspan="4" style="color:var(--text-muted)">No GPS points in this range.</td></tr>`;
+    els.pointsTableBody.innerHTML = `<tr><td colspan="3" style="color:var(--text-muted)">No GPS points in this range.</td></tr>`;
     return;
   }
   els.pointsTableBody.innerHTML = currentPoints
     .slice(-100) // cap rows rendered for performance
     .reverse()
     .map((p) => `
-      <tr>
+      <tr data-lat="${p.lat}" data-lng="${p.lng}" data-time="${p.t}">
         <td>${GPSApp.formatDateTime(p.t)}</td>
         <td>${p.lat.toFixed(5)}, ${p.lng.toFixed(5)}</td>
         <td>${p.speed} km/h</td>
       </tr>`)
     .join("");
+
+  // Click a row once -> show that point on the map.
+  els.pointsTableBody.querySelectorAll("tr[data-lat]").forEach((tr) => {
+    tr.addEventListener("click", () => {
+      els.pointsTableBody
+        .querySelectorAll("tr.selected-point")
+        .forEach((r) => r.classList.remove("selected-point"));
+      tr.classList.add("selected-point");
+      GPSApp.markHistoryPoint(parseFloat(tr.dataset.lat), parseFloat(tr.dataset.lng), 16);
+    });
+  });
 }
 
 function formatDuration(ms) {

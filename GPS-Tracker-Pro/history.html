@@ -15,8 +15,8 @@
 <div class="app-shell">
 
   <header class="topbar">
-    <div style="display:flex;align-items:center;gap:22px;">
-      <button class="icon-btn sidebar-toggle-btn" id="sidebarToggle" aria-label="Toggle menu">
+    <div class="topbar-left">
+      <button class="icon-btn menu-btn" id="menuBtn" aria-label="Open menu">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
       </button>
       <div class="brand">
@@ -39,6 +39,39 @@
       </button>
     </div>
   </header>
+
+  <!-- Mobile account menu -->
+  <div class="mobile-menu" id="mobileMenu">
+    <div class="mobile-menu-head">
+      <div class="user-avatar" id="menuUserAvatar">O</div>
+      <div>
+        <div class="mobile-menu-name" id="menuUserName">Operator</div>
+        <div class="mobile-menu-sub">Signed in</div>
+      </div>
+    </div>
+    <div class="mobile-menu-items">
+      <button class="mobile-menu-item danger" id="menuLogoutBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+        Sign out
+      </button>
+    </div>
+  </div>
+
+  <!-- Mobile bottom navigation -->
+  <nav class="bottom-nav">
+    <a href="index.html" class="bottom-nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6.2-7-11a7 7 0 1 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+      <span>Live Map</span>
+    </a>
+    <a href="devices.html" class="bottom-nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      <span>Devices</span>
+    </a>
+    <a href="history.html" class="bottom-nav-item active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+      <span>History</span>
+    </a>
+  </nav>
 
   <main class="content-scroll" style="grid-column: 1 / -1;">
     <div class="page-head">
@@ -71,7 +104,7 @@
     </div>
 
     <!-- Trip stats -->
-    <div class="grid-4" style="margin-bottom:20px;">
+    <div class="grid-4 stats-grid" style="margin-bottom:20px;">
       <div class="panel-card">
         <div class="stat-label">Total distance</div>
         <div class="stat-value" id="historyDistance" style="font-size:22px;margin-top:6px;">0 km</div>
@@ -90,25 +123,26 @@
       </div>
     </div>
 
-    <!-- Route map -->
-    <div class="panel-card" style="padding:0;overflow:hidden;margin-bottom:20px;">
-      <div id="map" style="height:420px;width:100%;position:relative;">
-        <p id="historyEmptyState" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:13px;">
-          Choose a device and date range, then load history to see the route.
-        </p>
+    <!-- Route map + points table side by side -->
+    <div class="history-split">
+      <div class="panel-card history-map-panel">
+        <div id="map" style="height:420px;width:100%;position:relative;">
+          <p id="historyEmptyState" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:13px;">
+            Choose a device and date range, then load history to see the route.
+          </p>
+        </div>
       </div>
-    </div>
 
-    <!-- Points table -->
-    <div class="panel-card">
-      <table>
-        <thead>
-          <tr><th>Time</th><th>Coordinates</th><th>Speed</th></tr>
-        </thead>
-        <tbody id="historyTableBody">
-          <tr><td colspan="3" style="color:var(--text-muted)">No data loaded yet.</td></tr>
-        </tbody>
-      </table>
+      <div class="panel-card history-table-panel">
+        <table>
+          <thead>
+            <tr><th>Time</th><th>Coordinates</th><th>Speed</th></tr>
+          </thead>
+          <tbody id="historyTableBody">
+            <tr><td colspan="3" style="color:var(--text-muted)">No data loaded yet.</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </main>
 
@@ -122,10 +156,6 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="js/map.js"></script>
 <script src="js/history.js"></script>
-
-<script>
-  document.getElementById("logoutBtn").addEventListener("click", () => GPSApp.signOutUser());
-</script>
 
 </body>
 </html>

@@ -201,7 +201,9 @@ function drawHistoryRoute(points) {
   if (historyPolyline) map.removeLayer(historyPolyline);
   if (historyStartMarker) map.removeLayer(historyStartMarker);
   if (historyEndMarker) map.removeLayer(historyEndMarker);
-  historyPolyline = historyStartMarker = historyEndMarker = null;
+  if (historyPointMarker) map.removeLayer(historyPointMarker);
+  historyPolyline = historyStartMarker = historyEndMarker = historyPointMarker = null;
+  historyPoints = points;
   if (!points.length) return;
 
   const latLngs = points.map((p) => [p.lat, p.lng]);
@@ -211,6 +213,9 @@ function drawHistoryRoute(points) {
     opacity: 0.9,
     weight: 4
   }).addTo(map);
+
+  // Click the route line -> alert the time of the nearest recorded point.
+  historyPolyline.on("click", onHistoryLineClick);
 
   historyStartMarker = L.marker(latLngs[0], {
     icon: L.divIcon({
@@ -233,6 +238,47 @@ function drawHistoryRoute(points) {
   map.fitBounds(L.latLngBounds(latLngs), { padding: [60, 60] });
 }
 
+let historyPointMarker = null;
+let historyPoints = [];
+
+// Click on the route line: find the nearest recorded point and "alert" its
+// time (popup + marker), then notify history.js so the table row highlights.
+function onHistoryLineClick(e) {
+  if (!historyPoints.length) return;
+  let nearest = historyPoints[0];
+  let minDist = Infinity;
+  historyPoints.forEach((p) => {
+    const d = (p.lat - e.latlng.lat) ** 2 + (p.lng - e.latlng.lng) ** 2;
+    if (d < minDist) { minDist = d; nearest = p; }
+  });
+  markHistoryPoint(nearest.lat, nearest.lng);
+  L.popup()
+    .setLatLng([nearest.lat, nearest.lng])
+    .setContent(`
+      <div class="history-point-popup">
+        <div class="hpp-time">${new Date(nearest.t).toLocaleString()}</div>
+        <div class="hpp-meta">${nearest.lat.toFixed(5)}, ${nearest.lng.toFixed(5)}</div>
+        <div class="hpp-meta">${nearest.speed || 0} km/h</div>
+      </div>`)
+    .openOn(map);
+  document.dispatchEvent(new CustomEvent("gps:history-point-selected", { detail: nearest }));
+}
+
+// Drop a marker on a specific history point and center the map on it.
+function markHistoryPoint(lat, lng, zoom) {
+  if (!map) return;
+  if (historyPointMarker) map.removeLayer(historyPointMarker);
+  historyPointMarker = L.marker([lat, lng], {
+    icon: L.divIcon({
+      className: "",
+      html: '<div style="width:26px;height:26px;border-radius:50%;background:#ff3b3b;border:3px solid #fff;box-shadow:0 0 14px rgba(255,59,59,0.9);"></div>',
+      iconSize: [26, 26],
+      iconAnchor: [13, 13]
+    })
+  }).addTo(map);
+  map.setView([lat, lng], zoom || 16);
+}
+
 /* -----------------------------------------------------------------------
    Boot — the #map element is already in the DOM (scripts run at the end of
    <body>), so we can init immediately once the page finishes parsing.
@@ -250,6 +296,6 @@ Object.assign(window.GPSApp, {
   upsertDeviceMarker, removeDeviceMarker, drawTrail,
   panTo, zoomIn, zoomOut, fitToAllMarkers,
   addGeofenceCircle, removeGeofenceCircle, clearAllGeofences,
-  drawHistoryRoute,
+  drawHistoryRoute, markHistoryPoint,
   TYPE_COLORS
 });
