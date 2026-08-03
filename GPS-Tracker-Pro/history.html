@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GPS Tracker Pro — History</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ff3b3b'%3E%3Cpath d='M12 2C8.1 2 5 5.1 5 9c0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7z'/%3E%3Ccircle cx='12' cy='9' r='3.2' fill='%23ffffff'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+</head>
+<body>
+
+<div class="app-shell">
+
+  <header class="topbar">
+    <div style="display:flex;align-items:center;gap:22px;">
+      <button class="icon-btn sidebar-toggle-btn" id="sidebarToggle" aria-label="Toggle menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+      <div class="brand">
+        <div class="brand-mark"></div>
+        <div>GPS Tracker Pro<small>Live fleet &amp; asset tracking</small></div>
+      </div>
+      <nav class="topnav-links">
+        <a href="index.html">Live Map</a>
+        <a href="devices.html">Devices</a>
+        <a href="history.html" class="active">History</a>
+      </nav>
+    </div>
+    <div class="topbar-right">
+      <div class="user-chip">
+        <div class="user-avatar" id="userChipAvatar">O</div>
+        <span id="userChipName">Operator</span>
+      </div>
+      <button class="icon-btn" id="logoutBtn" aria-label="Sign out" title="Sign out">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main class="content-scroll" style="grid-column: 1 / -1;">
+    <div class="page-head">
+      <div>
+        <h1>Travel History</h1>
+        <p>Select a device and date range to replay its recorded route.</p>
+      </div>
+    </div>
+
+    <!-- Filter panel -->
+    <div class="panel-card" style="margin-bottom:20px;">
+      <div class="grid-4">
+        <div class="field">
+          <label for="historyDeviceSelect">Device</label>
+          <select id="historyDeviceSelect"></select>
+        </div>
+        <div class="field">
+          <label for="historyStartDate">From</label>
+          <input type="date" id="historyStartDate">
+        </div>
+        <div class="field">
+          <label for="historyEndDate">To</label>
+          <input type="date" id="historyEndDate">
+        </div>
+        <div class="field">
+          <label>&nbsp;</label>
+          <button class="btn btn-primary" id="loadHistoryBtn">Load history</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Trip stats -->
+    <div class="grid-4" style="margin-bottom:20px;">
+      <div class="panel-card">
+        <div class="stat-label">Total distance</div>
+        <div class="stat-value" id="historyDistance" style="font-size:22px;margin-top:6px;">0 km</div>
+      </div>
+      <div class="panel-card">
+        <div class="stat-label">Travel duration</div>
+        <div class="stat-value" id="historyDuration" style="font-size:22px;margin-top:6px;">0m</div>
+      </div>
+      <div class="panel-card">
+        <div class="stat-label">Average speed</div>
+        <div class="stat-value" id="historyAvgSpeed" style="font-size:22px;margin-top:6px;">0 km/h</div>
+      </div>
+      <div class="panel-card">
+        <div class="stat-label">Maximum speed</div>
+        <div class="stat-value" id="historyMaxSpeed" style="font-size:22px;margin-top:6px;">0 km/h</div>
+      </div>
+    </div>
+
+    <!-- Route map -->
+    <div class="panel-card" style="padding:0;overflow:hidden;margin-bottom:20px;">
+      <div id="map" style="height:420px;width:100%;position:relative;">
+        <p id="historyEmptyState" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:13px;">
+          Choose a device and date range, then load history to see the route.
+        </p>
+      </div>
+    </div>
+
+    <!-- Points table -->
+    <div class="panel-card">
+      <table>
+        <thead>
+          <tr><th>Time</th><th>Coordinates</th><th>Speed</th></tr>
+        </thead>
+        <tbody id="historyTableBody">
+          <tr><td colspan="3" style="color:var(--text-muted)">No data loaded yet.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="js/firebase.js"></script>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="js/map.js"></script>
+<script src="js/history.js"></script>
+
+<script>
+  document.getElementById("logoutBtn").addEventListener("click", () => GPSApp.signOutUser());
+</script>
+
+</body>
+</html>

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GPS Tracker Pro — Devices</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ff3b3b'%3E%3Cpath d='M12 2C8.1 2 5 5.1 5 9c0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7z'/%3E%3Ccircle cx='12' cy='9' r='3.2' fill='%23ffffff'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="app-shell">
+
+  <header class="topbar">
+    <div style="display:flex;align-items:center;gap:22px;">
+      <button class="icon-btn sidebar-toggle-btn" id="sidebarToggle" aria-label="Toggle menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+      <div class="brand">
+        <div class="brand-mark"></div>
+        <div>GPS Tracker Pro<small>Live fleet &amp; asset tracking</small></div>
+      </div>
+      <nav class="topnav-links">
+        <a href="index.html">Live Map</a>
+        <a href="devices.html" class="active">Devices</a>
+        <a href="history.html">History</a>
+      </nav>
+    </div>
+    <div class="topbar-right">
+      <div class="user-chip">
+        <div class="user-avatar" id="userChipAvatar">O</div>
+        <span id="userChipName">Operator</span>
+      </div>
+      <button class="icon-btn" id="logoutBtn" aria-label="Sign out" title="Sign out">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main class="content-scroll" style="grid-column: 1 / -1;">
+
+    <div class="page-head">
+      <div>
+        <h1>Device Management</h1>
+        <p>Add, edit, and remove vehicles, people, pets, and asset trackers.</p>
+      </div>
+      <button class="btn btn-primary" id="addDeviceBtn" style="flex:none;padding:11px 18px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+        Add device
+      </button>
+    </div>
+
+    <div class="panel-card" style="margin-bottom:32px;">
+      <table>
+        <thead>
+          <tr><th>Device</th><th>Type</th><th>Status</th><th>Battery</th><th>Speed</th><th>Last update</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="devicesTableBody">
+          <tr><td colspan="7" style="color:var(--text-muted)">Loading devices…</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="page-head">
+      <div>
+        <h1 style="font-size:19px;">Geofences</h1>
+        <p>Safe zones that trigger enter / exit alerts.</p>
+      </div>
+      <button class="btn btn-primary" id="addGeofenceBtn" style="flex:none;padding:11px 18px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+        Add geofence
+      </button>
+    </div>
+
+    <div class="panel-card">
+      <table>
+        <thead>
+          <tr><th>Name</th><th>Applies to</th><th>Radius</th><th>Center</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="geofenceTableBody">
+          <tr><td colspan="5" style="color:var(--text-muted)">Loading geofences…</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </main>
+</div>
+
+<!-- Add / edit device modal -->
+<div class="modal-backdrop" id="deviceModalBackdrop">
+  <div class="modal">
+    <h3 id="deviceModalTitle">Add device</h3>
+    <form id="deviceForm">
+      <div class="field">
+        <label for="deviceIdInput">Device ID</label>
+        <input type="text" id="deviceIdInput" name="deviceId" placeholder="GPS001" required>
+      </div>
+      <div class="field">
+        <label for="deviceNameInput">Name</label>
+        <input type="text" id="deviceNameInput" name="name" placeholder="Vehicle 01" required>
+      </div>
+      <div class="field">
+        <label for="deviceTypeInput">Type</label>
+        <select id="deviceTypeInput" name="type">
+          <option value="vehicle">Vehicle</option>
+          <option value="human">Human</option>
+          <option value="pet">Pet</option>
+          <option value="asset">Asset</option>
+        </select>
+      </div>
+      <div class="grid-2">
+        <div class="field">
+          <label for="deviceLatInput">Initial latitude</label>
+          <input type="number" step="any" id="deviceLatInput" name="latitude" placeholder="6.9271">
+        </div>
+        <div class="field">
+          <label for="deviceLngInput">Initial longitude</label>
+          <input type="number" step="any" id="deviceLngInput" name="longitude" placeholder="79.8612">
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" id="cancelDeviceBtn">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save device</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Add geofence modal -->
+<div class="modal-backdrop" id="geofenceModalBackdrop">
+  <div class="modal">
+    <h3>Add geofence</h3>
+    <form id="geofenceForm">
+      <div class="field">
+        <label for="geofenceNameInput">Name</label>
+        <input type="text" id="geofenceNameInput" name="name" placeholder="Home base" required>
+      </div>
+      <div class="field">
+        <label for="geofenceDeviceSelect">Applies to</label>
+        <select id="geofenceDeviceSelect" name="deviceId"></select>
+      </div>
+      <div class="grid-2">
+        <div class="field">
+          <label for="geofenceLatInput">Center latitude</label>
+          <input type="number" step="any" id="geofenceLatInput" name="lat" placeholder="6.9271" required>
+        </div>
+        <div class="field">
+          <label for="geofenceLngInput">Center longitude</label>
+          <input type="number" step="any" id="geofenceLngInput" name="lng" placeholder="79.8612" required>
+        </div>
+      </div>
+      <div class="field">
+        <label for="geofenceRadiusInput">Radius (meters)</label>
+        <input type="number" step="any" id="geofenceRadiusInput" name="radius" placeholder="500" required>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" id="cancelGeofenceBtn">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save geofence</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="js/firebase.js"></script>
+<script src="js/devices.js"></script>
+
+</body>
+</html>

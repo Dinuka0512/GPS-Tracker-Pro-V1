@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>GPS Tracker Pro — Live Dashboard</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ff3b3b'%3E%3Cpath d='M12 2C8.1 2 5 5.1 5 9c0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7z'/%3E%3Ccircle cx='12' cy='9' r='3.2' fill='%23ffffff'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+</head>
+<body>
+
+<div class="app-shell">
+
+  <!-- ============================ TOP NAVIGATION ============================ -->
+  <header class="topbar">
+    <div style="display:flex;align-items:center;gap:22px;">
+      <button class="icon-btn sidebar-toggle-btn" id="sidebarToggle" aria-label="Toggle device list">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+      <div class="brand">
+        <div class="brand-mark"></div>
+        <div>
+          GPS Tracker Pro
+          <small>Live fleet &amp; asset tracking</small>
+        </div>
+      </div>
+      <nav class="topnav-links">
+        <a href="index.html" class="active">Live Map</a>
+        <a href="devices.html">Devices</a>
+        <a href="history.html">History</a>
+      </nav>
+    </div>
+    <div class="topbar-right">
+      <button class="icon-btn" id="notifBtn" aria-label="Notifications">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+        <span class="badge-dot" id="notifBadge" style="display:none;"></span>
+      </button>
+      <div class="user-chip">
+        <div class="user-avatar" id="userChipAvatar">O</div>
+        <span id="userChipName">Operator</span>
+      </div>
+      <button class="icon-btn" id="logoutBtn" aria-label="Sign out" title="Sign out">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- ============================ SIDEBAR ============================ -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-title">
+        <h2>Tracked Devices</h2>
+        <span class="device-count" id="deviceCount">0</span>
+      </div>
+      <div class="search-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" id="searchInput" placeholder="Search devices…">
+      </div>
+    </div>
+    <div class="filter-row">
+      <button class="filter-chip active" data-filter="all">All</button>
+      <button class="filter-chip" data-filter="vehicle">Vehicles</button>
+      <button class="filter-chip" data-filter="human">People</button>
+      <button class="filter-chip" data-filter="pet">Pets</button>
+      <button class="filter-chip" data-filter="asset">Assets</button>
+    </div>
+    <div class="device-list" id="deviceList">
+      <!-- populated by tracker.js -->
+    </div>
+  </aside>
+
+  <!-- ============================ MAIN MAP VIEW ============================ -->
+  <main class="main-view">
+    <div id="map"></div>
+
+    <!-- Floating stats strip -->
+    <div class="floating-panel stats-strip">
+      <div class="stat-block">
+        <div class="stat-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+        </div>
+        <div>
+          <div class="stat-value" id="statOnline">0</div>
+          <div class="stat-label">Online now</div>
+        </div>
+      </div>
+      <div class="stat-block">
+        <div class="stat-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6.2-7-11a7 7 0 1 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+        </div>
+        <div>
+          <div class="stat-value" id="statTotal">0</div>
+          <div class="stat-label">Total devices</div>
+        </div>
+      </div>
+      <div class="stat-block">
+        <div class="stat-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 12 4-8 4 8 4-8 4 8"/><path d="M3 12h18"/></svg>
+        </div>
+        <div>
+          <div class="stat-value" id="statAvgSpeed">0 km/h</div>
+          <div class="stat-label">Avg. speed</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Device detail card (appears when a device is selected) -->
+    <div class="floating-panel device-detail-card" id="deviceDetailCard"></div>
+
+    <!-- Map controls -->
+    <div class="map-controls">
+      <button class="map-ctrl-btn" id="zoomInBtn" title="Zoom in">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+      </button>
+      <button class="map-ctrl-btn" id="zoomOutBtn" title="Zoom out">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg>
+      </button>
+      <button class="map-ctrl-btn" id="fitAllBtn" title="Fit all devices">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+      </button>
+    </div>
+
+    <!-- Loading overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+      <div class="radar-loader"></div>
+      <p>ACQUIRING SIGNAL…</p>
+    </div>
+  </main>
+
+</div>
+
+<!-- ============================ SCRIPTS ============================ -->
+
+<!-- Firebase (compat SDK — simplest for plain <script> usage) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="js/firebase.js"></script>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="js/map.js"></script>
+<script src="js/alerts.js"></script>
+<script src="js/tracker.js"></script>
+
+</body>
+</html>
