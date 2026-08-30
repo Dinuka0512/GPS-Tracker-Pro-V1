@@ -24,15 +24,16 @@ const TYPE_ICON_PATHS = {
 let map;
 const markerOverlays = {};   // deviceId -> L.Marker
 const trailPolylines = {};   // deviceId -> L.Polyline
+const trailPointMarkers = {};   // deviceId -> L.Marker[] (dot at each trail point)
 const geofenceCircles = {};  // geofenceId -> L.Circle
 let historyPolyline = null;
 let historyStartMarker = null;
 let historyEndMarker = null;
 
 // Dark "command center" tile layer (CARTO basemap) — no API key required.
-const TILE_URL = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
+const TILE_URL = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
 const TILE_ATTRIBUTION =
-  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>';
+  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 
 /* -----------------------------------------------------------------------
    initMap — called once Leaflet is loaded. Dispatches "gps:map-ready" so
@@ -129,9 +130,18 @@ function removeDeviceMarker(deviceId) {
     map.removeLayer(trailPolylines[deviceId]);
     delete trailPolylines[deviceId];
   }
+  clearTrailPointMarkers(deviceId);
 }
 
-// Draws/updates the last-N-points route trail for a device.
+// Remove every point dot for a device's trail.
+function clearTrailPointMarkers(deviceId) {
+  (trailPointMarkers[deviceId] || []).forEach((m) => map.removeLayer(m));
+  delete trailPointMarkers[deviceId];
+}
+
+// Draws/updates the last-N-points route trail for a device as a
+// point-by-point line: a red polyline connecting a small dot at each
+// recorded location (0----0----0----0).
 function drawTrail(deviceId, points, colorType) {
   const color = TYPE_COLORS[colorType] || TYPE_COLORS.vehicle;
   const latLngs = points.map((p) => [p.lat, p.lng]);
@@ -145,6 +155,24 @@ function drawTrail(deviceId, points, colorType) {
       weight: 3
     }).addTo(map);
   }
+
+  // Point-by-point dots: one marker at each past location so the route is
+  // shown as 0----0----0----0 rather than just a bare line.
+  clearTrailPointMarkers(deviceId);
+  trailPointMarkers[deviceId] = points.map((p, i) => {
+    const isFirst = i === 0;
+    const isCurrent = i === points.length - 1;
+    const dotColor = isCurrent ? color : "rgba(255,255,255,0.85)";
+    const size = isCurrent ? 14 : 9;
+    const html = `
+      <div style="width:${size}px;height:${size}px;border-radius:50%;
+                  background:${dotColor};border:2px solid #0a0a0a;
+                  box-shadow:${isCurrent ? `0 0 10px ${color}` : "none"};"></div>`;
+    return L.marker([p.lat, p.lng], {
+      icon: L.divIcon({ className: "", html, iconSize: [size, size], iconAnchor: [size / 2, size / 2] }),
+      interactive: false
+    }).addTo(map);
+  });
 }
 
 function panTo(lat, lng, zoom) {
@@ -202,6 +230,7 @@ function drawHistoryRoute(points) {
   if (historyStartMarker) map.removeLayer(historyStartMarker);
   if (historyEndMarker) map.removeLayer(historyEndMarker);
   if (historyPointMarker) map.removeLayer(historyPointMarker);
+  clearHistoryPointDots();
   historyPolyline = historyStartMarker = historyEndMarker = historyPointMarker = null;
   historyPoints = points;
   if (!points.length) return;
@@ -213,6 +242,24 @@ function drawHistoryRoute(points) {
     opacity: 0.9,
     weight: 4
   }).addTo(map);
+
+  // Point-by-point dots so the route reads as 0----0----0----0 and each
+  // recorded location is visible. If there are many points, step through
+  // them so the dots stay clear instead of piling up.
+  const MAX_DOTS = 80;
+  const step = Math.max(1, Math.ceil(points.length / MAX_DOTS));
+  const dot = L.divIcon({
+    className: "",
+    html: '<div style="width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,0.85);border:2px solid #0a0a0a;"></div>',
+    iconSize: [9, 9],
+    iconAnchor: [4.5, 4.5]
+  });
+  historyPointDots = [];
+  for (let i = 0; i < points.length; i += step) {
+    const p = points[i];
+    const m = L.marker([p.lat, p.lng], { icon: dot, interactive: false }).addTo(map);
+    historyPointDots.push(m);
+  }
 
   // Click the route line -> alert the time of the nearest recorded point.
   historyPolyline.on("click", onHistoryLineClick);
@@ -240,6 +287,13 @@ function drawHistoryRoute(points) {
 
 let historyPointMarker = null;
 let historyPoints = [];
+let historyPointDots = [];
+
+// Remove the per-point dots drawn for a history route.
+function clearHistoryPointDots() {
+  (historyPointDots || []).forEach((m) => map.removeLayer(m));
+  historyPointDots = [];
+}
 
 // Click on the route line: find the nearest recorded point and "alert" its
 // time (popup + marker), then notify history.js so the table row highlights.

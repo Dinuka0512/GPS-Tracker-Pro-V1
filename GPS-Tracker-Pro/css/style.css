@@ -821,3 +821,15 @@ tr.selected-point td { background: rgba(255,59,59,0.12) !important; }
   .stat-value { font-size: 15px; }
   .topbar-left { gap: 8px; }
 }
+
+/* ==========================================================================
+   Dark map basemap (key-free)
+   Inverts the free OpenStreetMap tiles with CSS to produce a dark "command
+   center" theme. No API key required — works with any standard OSM/light
+   tile source. Attribution is kept in the map corner automatically.
+   ========================================================================== */
+.leaflet-tile-pane {
+  filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%) saturate(0.9);
+}
+/* Keep the dark background while tiles load / during pan */
+.leaflet-container { background: #050505; }
